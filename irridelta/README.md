@@ -84,6 +84,25 @@ Luego abre la dirección que indique Vite (por ejemplo `http://localhost:5173`).
 - `npm run build` - Genera el build de producción.
 - `npm run preview` - Previsualiza el build de producción.
 - `npm run lint` - Ejecuta ESLint sobre el proyecto.
+- `npm run make-admin -- usuario@dominio.com` - Asigna el rol `admin` a un usuario existente en Supabase.
+
+## Roles de usuario
+
+- Los usuarios autenticados son tratados como `cliente` por defecto.
+- Un usuario solo pasa a ser `admin` si tiene `app_metadata.role = "admin"` en Supabase Auth.
+- Para promover un usuario, crea un archivo `.env.admin.local` con:
+
+```env
+SUPABASE_URL=tu_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
+```
+
+- También puedes usar `.env.admin.example` como guía.
+- Luego ejecuta:
+
+```bash
+npm run make-admin -- usuario@dominio.com
+```
 
 ## 📝 Base de datos esperada en Supabase
 
