@@ -21,7 +21,7 @@ function Navbar() {
   const activeLinkClasses = "bg-gray-900 text-green-400";
   const ctaPath = "/login";
   const ctaLabel = "Iniciar Sesion";
-  const isCtaActive = location.pathname === ctaPath;
+  const shouldShowLoginCta = location.pathname !== ctaPath;
 
   const navItems = [
     { name: "Inicio", path: "/" },
@@ -59,11 +59,8 @@ function Navbar() {
     navigate("/login", { replace: true });
   };
 
-  const ctaClasses = `rounded-lg px-5 py-2 text-sm font-semibold shadow-md transition duration-200 ${
-    isCtaActive
-      ? "bg-green-700 text-white"
-      : "bg-green-500 text-white hover:bg-green-600"
-  }`;
+  const ctaClasses =
+    "rounded-lg bg-green-500 px-5 py-2 text-sm font-semibold text-white shadow-md transition duration-200 hover:bg-green-600";
 
   const signOutClasses =
     "rounded-lg bg-red-500 px-5 py-2 text-sm font-semibold text-white shadow-md transition duration-200 hover:bg-red-600";
@@ -91,7 +88,7 @@ function Navbar() {
             ))}
           </div>
 
-            {!isLoading && !user && (
+            {!isLoading && !user && shouldShowLoginCta && (
               <Link to={ctaPath} className={ctaClasses}>
                 {ctaLabel}
               </Link>
@@ -136,7 +133,7 @@ function Navbar() {
               </Link>
             ))}
 
-            {!isLoading && !user && (
+            {!isLoading && !user && shouldShowLoginCta && (
               <Link
                 to={ctaPath}
                 className="mt-3 block rounded-lg bg-green-500 px-4 py-3 text-center text-sm font-semibold text-white shadow-md transition duration-200 hover:bg-green-600"

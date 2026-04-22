@@ -9,7 +9,9 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { logIn, signUp } = useAuth();
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const { logIn, signUp, resetPassword } = useAuth();
   const user = useSessionStore((state) => state.user);
   const role = useSessionStore((state) => state.role);
   const isLoading = useSessionStore((state) => state.isLoading);
@@ -24,6 +26,7 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
 
     try {
       const authData = isSignUp
@@ -31,7 +34,7 @@ function Login() {
         : await logIn(email, password);
 
       if (!authData.session) {
-        setError(
+        setSuccessMessage(
           "Registro exitoso. Revisa tu correo para confirmar la cuenta antes de iniciar sesion."
         );
         return;
@@ -46,8 +49,31 @@ function Login() {
     }
   };
 
+  const handlePasswordReset = async () => {
+    setError("");
+    setSuccessMessage("");
+
+    if (!email.trim()) {
+      setError("Ingresa tu email y luego solicita el recupero de contrasena.");
+      return;
+    }
+
+    try {
+      setIsResettingPassword(true);
+      await resetPassword(email.trim());
+      setSuccessMessage(
+        "Te enviamos un enlace para restablecer la contrasena. Revisa tu correo."
+      );
+    } catch (authError) {
+      setError(authError.message || "No se pudo iniciar el recupero de contrasena.");
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   const toggleMode = () => {
     setError("");
+    setSuccessMessage("");
     setIsSignUp(!isSignUp);
   };
 
@@ -64,6 +90,15 @@ function Login() {
               role="alert"
             >
               {error}
+            </div>
+          )}
+
+          {successMessage && (
+            <div
+              className="rounded border border-green-400 bg-green-100 px-4 py-3 text-green-700"
+              role="status"
+            >
+              {successMessage}
             </div>
           )}
 
@@ -93,6 +128,17 @@ function Login() {
               required
             />
           </div>
+
+          {!isSignUp && (
+            <button
+              type="button"
+              className="w-full text-right text-sm text-green-700 underline"
+              onClick={handlePasswordReset}
+              disabled={isResettingPassword}
+            >
+              {isResettingPassword ? "Enviando enlace..." : "Olvide mi contraseña"}
+            </button>
+          )}
 
           <button
             type="submit"

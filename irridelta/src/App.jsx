@@ -13,6 +13,7 @@ import Products from "./pages/Products";
 import Branches from "./pages/Branches";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import AdminProducts from "./pages/AdminProducts";
 import Capacitaciones from "./pages/Capacitaciones";
 import Certificaciones from "./pages/Certificaciones";
@@ -115,6 +116,7 @@ function App() {
               <Route path="/sucursales" element={<Branches />} />
               <Route path="/contacto" element={<Contact />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/recuperar-contrasena" element={<ResetPassword />} />
               <Route
                 path="/capacitaciones"
                 element={
