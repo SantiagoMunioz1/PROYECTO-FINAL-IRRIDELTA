@@ -30,10 +30,24 @@ export function useAuth() {
     return data;
   };
 
-  const signUp = async (email, password) => {
+  const signUp = async (emailOrPayload, maybePassword, maybeMetadata = {}) => {
+    const payload =
+      typeof emailOrPayload === "object"
+        ? emailOrPayload
+        : {
+            email: emailOrPayload,
+            password: maybePassword,
+            metadata: maybeMetadata,
+          };
+
+    const { email, password, metadata = {} } = payload;
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: metadata,
+      },
     });
 
     if (error) {
@@ -62,7 +76,7 @@ export function useAuth() {
     clearSession();
 
     if (error) {
-      console.warn("Supabase devolvio un error al cerrar sesion", error);
+      console.warn("Supabase devolvió un error al cerrar sesión", error);
     }
   };
 

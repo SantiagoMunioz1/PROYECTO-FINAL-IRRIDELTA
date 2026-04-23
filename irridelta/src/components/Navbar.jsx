@@ -17,11 +17,21 @@ function Navbar() {
   const navBg = "bg-gray-800";
   const baseLinkClasses =
     "rounded-md px-3 py-2 text-sm font-medium transition duration-150 ease-in-out";
-  const defaultLinkClasses = "text-gray-300 hover:bg-gray-700 hover:text-green-400";
+  const defaultLinkClasses =
+    "text-gray-300 hover:bg-gray-700 hover:text-green-400";
   const activeLinkClasses = "bg-gray-900 text-green-400";
   const ctaPath = "/login";
   const ctaLabel = "Iniciar Sesion";
-  const shouldShowLoginCta = location.pathname !== ctaPath;
+  const normalizedPath =
+    decodeURIComponent(location.pathname).replace(/\/+$/, "") || "/";
+  const isPasswordRecoveryPath =
+    normalizedPath.startsWith("/olvide-contrase") ||
+    normalizedPath.startsWith("/recuperar-contrase");
+  const shouldShowLoginCta =
+    normalizedPath !== "/login" &&
+    normalizedPath !== "/registro" &&
+    !isPasswordRecoveryPath;
+  const shouldShowSignOutButton = !isPasswordRecoveryPath;
 
   const navItems = [
     { name: "Inicio", path: "/" },
@@ -30,11 +40,6 @@ function Navbar() {
     { name: "Sucursales", path: "/sucursales" },
     { name: "Contacto", path: "/contacto" },
   ];
-
-  if (user && role === USER_ROLES.CLIENTE) {
-    navItems.push({ name: "Capacitaciones", path: "/capacitaciones" });
-    navItems.push({ name: "Certificaciones", path: "/certificaciones" });
-  }
 
   if (user && role === USER_ROLES.ADMIN) {
     navItems.push({ name: "Admin Productos", path: "/admin/productos" });
@@ -49,7 +54,7 @@ function Navbar() {
   }
 
   const getLinkClasses = (path) => {
-    const isActive = location.pathname === path;
+    const isActive = normalizedPath === path;
     return `${baseLinkClasses} ${isActive ? activeLinkClasses : defaultLinkClasses}`;
   };
 
@@ -81,12 +86,16 @@ function Navbar() {
 
           <div className="hidden items-center gap-4 md:flex">
             <div className="flex items-baseline space-x-4">
-            {navItems.map((item) => (
-              <Link key={item.name} to={item.path} className={getLinkClasses(item.path)}>
-                {item.name}
-              </Link>
-            ))}
-          </div>
+              {navItems.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className={getLinkClasses(item.path)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </div>
 
             {!isLoading && !user && shouldShowLoginCta && (
               <Link to={ctaPath} className={ctaClasses}>
@@ -94,7 +103,7 @@ function Navbar() {
               </Link>
             )}
 
-            {!isLoading && user && (
+            {!isLoading && user && shouldShowSignOutButton && (
               <button onClick={handleSignOut} className={signOutClasses}>
                 Cerrar sesion
               </button>
@@ -143,7 +152,7 @@ function Navbar() {
               </Link>
             )}
 
-            {!isLoading && user && (
+            {!isLoading && user && shouldShowSignOutButton && (
               <button
                 onClick={handleSignOut}
                 className="mt-3 block w-full rounded-lg bg-red-500 px-4 py-3 text-center text-sm font-semibold text-white shadow-md transition duration-200 hover:bg-red-600"

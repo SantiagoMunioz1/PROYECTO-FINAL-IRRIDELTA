@@ -25,7 +25,7 @@ export function getDefaultPathByRole(role) {
   }
 
   if (role === USER_ROLES.CLIENTE) {
-    return "/capacitaciones";
+    return "/nosotros";
   }
 
   return "/";

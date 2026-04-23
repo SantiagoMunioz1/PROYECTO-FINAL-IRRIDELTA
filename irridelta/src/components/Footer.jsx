@@ -20,10 +20,6 @@ function Footer() {
     { name: "Contacto", path: "/contacto" },
   ];
 
-  if (!isLoading && !user) {
-    footerLinks.push({ name: "Iniciar Sesion", path: "/login" });
-  }
-
   if (user && role === USER_ROLES.CLIENTE) {
     footerLinks.push({ name: "Capacitaciones", path: "/capacitaciones" });
     footerLinks.push({ name: "Certificaciones", path: "/certificaciones" });
@@ -63,17 +59,6 @@ function Footer() {
             </Link>
           ))}
         </div>
-
-        {!isLoading && !user && (
-          <div className="mb-6 flex justify-center">
-            <Link
-              to="/login"
-              className="rounded-lg bg-green-500 px-6 py-3 text-sm font-semibold text-white shadow-md transition duration-200 hover:bg-green-600"
-            >
-              Iniciar Sesion
-            </Link>
-          </div>
-        )}
 
         <div className="mb-4 flex justify-center space-x-6">
           <a

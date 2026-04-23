@@ -12,7 +12,9 @@ import About from "./pages/About";
 import Products from "./pages/Products";
 import Branches from "./pages/Branches";
 import Contact from "./pages/Contact";
+import ForgotPassword from "./pages/ForgotPassword";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
 import AdminProducts from "./pages/AdminProducts";
 import Capacitaciones from "./pages/Capacitaciones";
@@ -30,7 +32,7 @@ function ProtectedRoute({ element: Element, allowedRoles = [], ...rest }) {
   const isLoading = useSessionStore((state) => state.isLoading);
 
   if (isLoading) {
-    return <div className="p-8 text-center">Cargando sesion...</div>;
+    return <div className="p-8 text-center">Cargando sesión...</div>;
   }
 
   if (!user) {
@@ -58,7 +60,7 @@ function App() {
       } = await supabase.auth.getSession();
 
       if (error) {
-        console.error("No se pudo obtener la sesion actual", error);
+        console.error("No se pudo obtener la sesión actual", error);
         if (isMounted) {
           clearSession();
         }
@@ -116,7 +118,11 @@ function App() {
               <Route path="/sucursales" element={<Branches />} />
               <Route path="/contacto" element={<Contact />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/registro" element={<Register />} />
+              <Route path="/olvide-contrasena" element={<ForgotPassword />} />
+              <Route path="/olvide-contraseña" element={<ForgotPassword />} />
               <Route path="/recuperar-contrasena" element={<ResetPassword />} />
+              <Route path="/recuperar-contraseña" element={<ResetPassword />} />
               <Route
                 path="/capacitaciones"
                 element={
@@ -173,7 +179,7 @@ function App() {
               />
               <Route
                 path="*"
-                element={<div className="p-8 text-center">404 - Pagina no encontrada</div>}
+                element={<div className="p-8 text-center">404 - Página no encontrada</div>}
               />
             </Routes>
           </main>

@@ -1,17 +1,45 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useSessionStore } from "../store/sessionStore";
 import { getDefaultPathByRole, getUserRole } from "../utils/authRoles";
 
+function getLoginErrorFeedback(authError) {
+  const rawMessage = String(authError?.message || "").toLowerCase();
+
+  if (
+    rawMessage.includes("invalid login credentials") ||
+    rawMessage.includes("invalid_grant")
+  ) {
+    return {
+      title: "No pudimos iniciar sesión",
+      description:
+        "El email o la contraseña no coinciden con nuestros registros. Revisa los datos e intenta nuevamente.",
+    };
+  }
+
+  if (rawMessage.includes("email not confirmed")) {
+    return {
+      title: "Confirma tu correo electrónico",
+      description:
+        "Tu cuenta aún no fue confirmada. Revisa tu bandeja de entrada y sigue el enlace de verificación antes de iniciar sesión.",
+    };
+  }
+
+  return {
+    title: "No pudimos iniciar sesión",
+    description:
+      authError?.message ||
+      "Ocurrió un problema al procesar tu solicitud. Intenta nuevamente en unos instantes.",
+  };
+}
+
 function Login() {
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
-  const { logIn, signUp, resetPassword } = useAuth();
+  const [errorFeedback, setErrorFeedback] = useState(null);
+  const { logIn } = useAuth();
   const user = useSessionStore((state) => state.user);
   const role = useSessionStore((state) => state.role);
   const isLoading = useSessionStore((state) => state.isLoading);
@@ -23,139 +51,119 @@ function Login() {
     }
   }, [isLoading, navigate, role, user]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccessMessage("");
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    setErrorFeedback(null);
 
     try {
-      const authData = isSignUp
-        ? await signUp(email, password)
-        : await logIn(email, password);
-
-      if (!authData.session) {
-        setSuccessMessage(
-          "Registro exitoso. Revisa tu correo para confirmar la cuenta antes de iniciar sesion."
-        );
-        return;
-      }
-
+      const authData = await logIn(email, password);
       const authenticatedUser = authData.user ?? authData.session?.user ?? null;
       const authenticatedRole = getUserRole(authenticatedUser);
 
-      navigate(getDefaultPathByRole(authenticatedRole), { replace: true });
+      navigate(getDefaultPathByRole(authenticatedRole), {
+        replace: true,
+      });
     } catch (authError) {
-      setError(authError.message || "No se pudo completar la autenticacion.");
+      setErrorFeedback(getLoginErrorFeedback(authError));
     }
-  };
-
-  const handlePasswordReset = async () => {
-    setError("");
-    setSuccessMessage("");
-
-    if (!email.trim()) {
-      setError("Ingresa tu email y luego solicita el recupero de contrasena.");
-      return;
-    }
-
-    try {
-      setIsResettingPassword(true);
-      await resetPassword(email.trim());
-      setSuccessMessage(
-        "Te enviamos un enlace para restablecer la contrasena. Revisa tu correo."
-      );
-    } catch (authError) {
-      setError(authError.message || "No se pudo iniciar el recupero de contrasena.");
-    } finally {
-      setIsResettingPassword(false);
-    }
-  };
-
-  const toggleMode = () => {
-    setError("");
-    setSuccessMessage("");
-    setIsSignUp(!isSignUp);
   };
 
   return (
     <div className="flex min-h-screen w-full justify-center bg-gray-50 py-16">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-2xl">
-        <h2 className="mb-8 text-center text-3xl font-bold text-gray-800">
-          Bienvenido
+        <h2 className="mb-2 text-center text-3xl font-bold text-gray-800">
+          Iniciar sesión
         </h2>
+        <p className="mb-8 text-center text-sm text-gray-600">
+          Accede con tu cuenta para continuar.
+        </p>
+
         <form onSubmit={handleLogin} className="space-y-6">
-          {error && (
+          {errorFeedback && (
             <div
-              className="rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
+              className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-900 shadow-sm"
               role="alert"
             >
-              {error}
-            </div>
-          )}
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-full bg-red-100 p-2">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                </div>
 
-          {successMessage && (
-            <div
-              className="rounded border border-green-400 bg-green-100 px-4 py-3 text-green-700"
-              role="status"
-            >
-              {successMessage}
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">{errorFeedback.title}</p>
+                  <p className="mt-1 text-sm leading-6 text-red-800">
+                    {errorFeedback.description}
+                  </p>
+
+                  <button
+                    type="button"
+                    className="mt-3 text-sm font-semibold text-red-700 underline underline-offset-2"
+                    onClick={() =>
+                      navigate("/olvide-contraseña", {
+                        state: { email: email.trim() },
+                      })
+                    }
+                  >
+                    Recuperar contraseña
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Usuario
+              Email
             </label>
             <input
               type="email"
-              placeholder="email"
+              placeholder="tu@email.com"
               className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-green-500 focus:ring-green-500"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               required
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Contrasena
+              Contraseña
             </label>
             <input
               type="password"
               placeholder="********"
               className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-green-500 focus:ring-green-500"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
               required
             />
           </div>
 
-          {!isSignUp && (
-            <button
-              type="button"
-              className="w-full text-right text-sm text-green-700 underline"
-              onClick={handlePasswordReset}
-              disabled={isResettingPassword}
-            >
-              {isResettingPassword ? "Enviando enlace..." : "Olvide mi contraseña"}
-            </button>
-          )}
+          <button
+            type="button"
+            className="w-full text-right text-sm text-green-700 underline"
+            onClick={() =>
+              navigate("/olvide-contraseña", {
+                state: { email: email.trim() },
+              })
+            }
+          >
+            Olvidé mi contraseña
+          </button>
 
           <button
             type="submit"
             className="w-full rounded-lg bg-green-600 py-3 font-semibold text-white transition duration-200 hover:bg-green-700"
           >
-            {isSignUp ? "Registrarse" : "Iniciar sesion"}
+            Iniciar sesión
           </button>
 
-          <button
-            type="button"
-            className="w-full text-sm text-green-700 underline"
-            onClick={toggleMode}
-          >
-            {isSignUp
-              ? "Ya tenes cuenta? Inicia sesion"
-              : "No tenes cuenta? Registrate"}
-          </button>
+          <p className="text-center text-sm text-gray-600">
+            ¿Todavía no tienes cuenta?{" "}
+            <Link className="font-semibold text-green-700 underline" to="/registro">
+              Crear cuenta
+            </Link>
+          </p>
         </form>
       </div>
     </div>
