@@ -1,7 +1,12 @@
 import React from "react";
 import { RESOURCE_TYPES } from "../services/learningContentService";
+import { useSessionStore } from "../store/sessionStore";
+import { Lock } from "lucide-react";
 
-function LearningItemPreviewCard({ item, showPublishedDate = true }) {
+function LearningItemPreviewCard({ item, showPublishedDate = true, userProgress = [] }) {
+  const user = useSessionStore((state) => state.user);
+  const role = useSessionStore((state) => state.role);
+
   if (!item) {
     return null;
   }
@@ -18,60 +23,68 @@ function LearningItemPreviewCard({ item, showPublishedDate = true }) {
 
       {item.modulos?.length > 0 && (
         <div className="space-y-4">
-          {item.modulos.map((module, moduleIndex) => (
-            <section
-              key={module.id ?? `${item.id}-module-${moduleIndex}`}
-              className="rounded-xl border border-gray-100 bg-gray-50 p-4"
-            >
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-                  Modulo {moduleIndex + 1}
-                </p>
-                <h3 className="mt-1 text-lg font-bold text-gray-900">
-                  {module.titulo}
-                </h3>
-                {module.descripcion && (
-                  <p className="mt-2 text-sm leading-6 text-gray-600">
-                    {module.descripcion}
-                  </p>
-                )}
-              </div>
+          {item.modulos.map((module, moduleIndex) => {
+            const isFirstModule = moduleIndex === 0;
+            const previousModuleId = !isFirstModule ? item.modulos[moduleIndex - 1]?.id : null;
+            const isPreviousCompleted = isFirstModule || userProgress.some(p => p.modulo_id === previousModuleId && p.aprobado);
+            const isLocked = role !== 'admin' && !isFirstModule && !isPreviousCompleted;
 
-              {module.recursos?.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {module.recursos.map((resource, resourceIndex) => {
-                    const isFile = resource.tipo === RESOURCE_TYPES.ARCHIVO;
-                    const href = isFile
-                      ? resource.archivo_url
-                      : resource.youtube_url;
-                    const label = isFile
-                      ? resource.archivo_nombre ?? "Abrir archivo"
-                      : "Ver YouTube";
-
-                    if (!href) {
-                      return null;
-                    }
-
-                    return (
-                      <a
-                        key={resource.id ?? `${module.id ?? moduleIndex}-${resourceIndex}`}
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={
-                          isFile
-                            ? "rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition duration-200 hover:bg-blue-600"
-                            : "rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition duration-200 hover:bg-red-600"
-                        }
-                      >
-                        {label}
-                      </a>
-                    );
-                  })}
+            return (
+              <section
+                key={module.id ?? `${item.id}-module-${moduleIndex}`}
+                className={`rounded-xl border border-gray-100 bg-gray-50 p-4 transition-all duration-300 ${
+                  isLocked ? "opacity-60 grayscale pointer-events-none select-none" : ""
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-green-700">
+                      Modulo {moduleIndex + 1}
+                      {isLocked && <Lock className="h-3 w-3" />}
+                    </p>
+                    <h3 className="mt-1 text-lg font-bold text-gray-900">
+                      {module.titulo}
+                    </h3>
+                    {module.descripcion && (
+                      <p className="mt-2 text-sm leading-6 text-gray-600">
+                        {module.descripcion}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              )}
-            </section>
-          ))}
+
+                {module.recursos?.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {module.recursos.map((resource, resourceIndex) => {
+                      const isFile = resource.tipo === RESOURCE_TYPES.ARCHIVO;
+                      const href = isFile
+                        ? resource.archivo_url
+                        : resource.youtube_url;
+                      const label = isFile
+                        ? resource.archivo_nombre ?? "Abrir archivo"
+                        : "Ver YouTube";
+
+                      if (!href) {
+                        return null;
+                      }
+
+                      return (
+                        <a
+                          key={resource.id ?? `${module.id ?? moduleIndex}-${resourceIndex}`}
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition duration-200 hover:bg-green-700 shadow-sm"
+                        >
+                          {label}
+                        </a>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
 

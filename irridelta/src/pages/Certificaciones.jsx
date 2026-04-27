@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
+import { Lock } from "lucide-react"; 
+import { useSessionStore } from "../store/sessionStore"; 
 import {
   LEARNING_TYPES,
   fetchLearningItems,
@@ -15,10 +17,14 @@ import {
 
 function Certificaciones() {
   const navigate = useNavigate();
+  const role = useSessionStore((state) => state.role); 
   const [items, setItems] = useState([]);
   const [selectedCertification, setSelectedCertification] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  
+  const [userProgress, setUserProgress] = useState([]); 
 
   useEffect(() => {
     let ignore = false;
@@ -129,10 +135,17 @@ function Certificaciones() {
                 );
                 const durationMinutes = getCertificationDurationMinutes(item);
 
+                // --- LÓGICA DE CANDADO ACTIVA ---
+                // Si sos admin, false (desbloqueado siempre).
+                // Si sos cliente, como userProgress está vacío, se evalúa a TRUE (Bloqueado).
+                const isLocked = role !== "admin" && userProgress.length === 0;
+
                 return (
                   <article
                     key={item.id}
-                    className="rounded-2xl bg-white p-6 shadow-md transition duration-200 hover:shadow-lg"
+                    className={`rounded-2xl bg-white p-6 shadow-md transition duration-200 hover:shadow-lg ${
+                      isLocked ? "border border-gray-200" : ""
+                    }`}
                   >
                     <h2 className="text-2xl font-bold text-gray-900">
                       {item.titulo}
@@ -160,10 +173,16 @@ function Certificaciones() {
                     <div className="mt-6">
                       <button
                         type="button"
+                        disabled={isLocked}
                         onClick={() => openConditionsModal(item)}
-                        className="inline-flex rounded-lg bg-blue-500 px-5 py-3 text-sm font-semibold text-white shadow transition duration-200 hover:bg-blue-600"
+                        className={`inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white shadow transition duration-200 ${
+                          isLocked
+                            ? "bg-gray-400 cursor-not-allowed opacity-80"
+                            : "bg-green-600 hover:bg-green-700"
+                        }`}
                       >
-                        Realizar certificacion
+                        {isLocked && <Lock className="h-4 w-4" />}
+                        {isLocked ? "Módulos pendientes" : "Realizar certificación"}
                       </button>
                     </div>
                   </article>
@@ -185,7 +204,7 @@ function Certificaciones() {
 
           <div className="relative z-10 w-full max-w-2xl rounded-3xl bg-white p-8 shadow-2xl">
             <div className="mb-6">
-              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-600">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-green-700">
                 Condiciones del examen
               </p>
               <h2 className="mt-3 text-3xl font-bold text-gray-900">
@@ -236,7 +255,7 @@ function Certificaciones() {
               </div>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-5 text-sm leading-6 text-slate-700">
+            <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5 text-sm leading-6 text-slate-700">
               Debes completar el examen dentro del tiempo configurado y alcanzar
               el minimo de respuestas correctas para obtener la certificacion.
               Tus respuestas quedan guardadas durante la resolucion y, si el
@@ -256,7 +275,7 @@ function Certificaciones() {
               <button
                 type="button"
                 onClick={handleAcceptConditions}
-                className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow transition duration-200 hover:bg-blue-700"
+                className="rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow transition duration-200 hover:bg-green-700"
               >
                 Aceptar y comenzar
               </button>
