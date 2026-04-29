@@ -1,15 +1,47 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../services/useAuth";
 import { useSessionStore } from "../../../store/sessionStore";
 import { getDefaultPathByRole, getUserRole } from "../authRoles";
+import styles from "./Login.module.css";
+
+function getLoginErrorFeedback(authError) {
+  const rawMessage = String(authError?.message || "").toLowerCase();
+
+  if (
+    rawMessage.includes("invalid login credentials") ||
+    rawMessage.includes("invalid_grant")
+  ) {
+    return {
+      title: "No pudimos iniciar sesión",
+      description:
+        "El email o la contraseña no coinciden con nuestros registros. Revisa los datos e intenta nuevamente.",
+    };
+  }
+
+  if (rawMessage.includes("email not confirmed")) {
+    return {
+      title: "Confirma tu correo electrónico",
+      description:
+        "Tu cuenta aún no fue confirmada. Revisa tu bandeja de entrada y sigue el enlace de verificación antes de iniciar sesión.",
+    };
+  }
+
+  return {
+    title: "No pudimos iniciar sesión",
+    description:
+      authError?.message ||
+      "Ocurrió un problema al procesar tu solicitud. Intenta nuevamente en unos instantes.",
+  };
+}
 
 function Login() {
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const { logIn, signUp } = useAuth();
+  const [errorFeedback, setErrorFeedback] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { logIn } = useAuth();
   const user = useSessionStore((state) => state.user);
   const role = useSessionStore((state) => state.role);
   const isLoading = useSessionStore((state) => state.isLoading);
@@ -21,95 +53,123 @@ function Login() {
     }
   }, [isLoading, navigate, role, user]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    setErrorFeedback(null);
+    setIsSubmitting(true);
 
     try {
-      const authData = isSignUp
-        ? await signUp(email, password)
-        : await logIn(email, password);
-
-      if (!authData.session) {
-        setError(
-          "Registro exitoso. Revisa tu correo para confirmar la cuenta antes de iniciar sesion."
-        );
-        return;
-      }
-
+      const authData = await logIn(email, password);
       const authenticatedUser = authData.user ?? authData.session?.user ?? null;
       const authenticatedRole = getUserRole(authenticatedUser);
 
-      navigate(getDefaultPathByRole(authenticatedRole), { replace: true });
+      navigate(getDefaultPathByRole(authenticatedRole), {
+        replace: true,
+      });
     } catch (authError) {
-      setError(authError.message || "No se pudo completar la autenticacion.");
+      setErrorFeedback(getLoginErrorFeedback(authError));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const toggleMode = () => {
-    setError("");
-    setIsSignUp(!isSignUp);
-  };
-
   return (
-    <div className="flex min-h-screen w-full justify-center bg-gray-50 py-16">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-2xl">
-        <h2 className="mb-8 text-center text-3xl font-bold text-gray-800">
-          Bienvenido
-        </h2>
-        <form onSubmit={handleLogin} className="space-y-6">
-          {error && (
-            <div
-              className="rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
-              role="alert"
-            >
-              {error}
+    <div className={styles.pageWrapper}>
+      <div className={styles.authCard}>
+        <div className={styles.formHeader}>
+          <h2 className={styles.formTitle}>
+            Iniciar sesión
+          </h2>
+          <p className={styles.formSubtitle}>
+            Accede con tu cuenta para continuar.
+          </p>
+        </div>
+
+        <form onSubmit={handleLogin} className={styles.formGroup}>
+          {errorFeedback && (
+            <div className={styles.alertWrapper} role="alert">
+              <div className={styles.alertLayout}>
+                <div className={styles.alertIconBox}>
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                </div>
+
+                <div className="flex-1">
+                  <p className={styles.alertTitle}>{errorFeedback.title}</p>
+                  <p className={styles.alertText}>
+                    {errorFeedback.description}
+                  </p>
+
+                  <button
+                    type="button"
+                    className={styles.forgotPasswordButton}
+                    onClick={() =>
+                      navigate("/olvide-contrasena", {
+                        state: { email: email.trim() },
+                      })
+                    }
+                  >
+                    Recuperar contraseña
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Usuario
+            <label className={styles.inputLabel}>
+              Email
             </label>
             <input
               type="email"
-              placeholder="email"
-              className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-green-500 focus:ring-green-500"
+              placeholder="tu@email.com"
+              className="input-field"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               required
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Contrasena
+            <label className={styles.inputLabel}>
+              Contraseña
             </label>
             <input
               type="password"
               placeholder="********"
-              className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-green-500 focus:ring-green-500"
+              className="input-field"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
               required
             />
           </div>
 
           <button
-            type="submit"
-            className="w-full rounded-lg bg-green-600 py-3 font-semibold text-white transition duration-200 hover:bg-green-700"
+            type="button"
+            className={styles.forgotPasswordLink}
+            onClick={() =>
+              navigate("/olvide-contrasena", {
+                state: { email: email.trim() },
+              })
+            }
           >
-            {isSignUp ? "Registrarse" : "Iniciar sesion"}
+            Olvidé mi contraseña
           </button>
 
           <button
-            type="button"
-            className="w-full text-sm text-green-700 underline"
-            onClick={toggleMode}
+            type="submit"
+            disabled={isSubmitting}
+            className="btn-primary"
+            style={{ width: '100%', padding: '0.75rem' }}
           >
-            {isSignUp
-              ? "Ya tenes cuenta? Inicia sesion"
-              : "No tenes cuenta? Registrate"}
+            {isSubmitting ? "Iniciando..." : "Iniciar sesión"}
           </button>
+
+          <p className={styles.footerText}>
+            ¿Todavía no tienes cuenta?{" "}
+            <Link className={styles.footerLink} to="/registro">
+              Crear cuenta
+            </Link>
+          </p>
         </form>
       </div>
     </div>

@@ -13,6 +13,9 @@ import Products from "./features/products/pages/Products";
 import Branches from "./features/public/pages/Branches";
 import Contact from "./features/public/pages/Contact";
 import Login from "./features/auth/pages/Login";
+import Register from "./features/auth/pages/Register";
+import ForgotPassword from "./features/auth/pages/ForgotPassword";
+import ResetPassword from "./features/auth/pages/ResetPassword";
 import AdminProducts from "./features/products/pages/AdminProducts";
 import Capacitaciones from "./features/learning/pages/Capacitaciones";
 import Certificaciones from "./features/certifications/pages/Certificaciones";
@@ -118,6 +121,9 @@ function App() {
               <Route path="/sucursales" element={<Branches />} />
               <Route path="/contacto" element={<Contact />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/registro" element={<Register />} />
+              <Route path="/olvide-contrasena" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route
                 path="/capacitaciones"
                 element={
