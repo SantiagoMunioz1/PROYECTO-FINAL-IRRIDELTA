@@ -3,26 +3,26 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { supabase } from "./supabaseClient";
 import { useSessionStore } from "./store/sessionStore";
 
-import { ProductProvider } from "./context/ProductContext";
+import { ProductProvider } from "./features/products/ProductContext";
 
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-import Home from "./pages/Home";
-import About from "./pages/About";
-import Products from "./pages/Products";
-import Branches from "./pages/Branches";
-import Contact from "./pages/Contact";
-import Login from "./pages/Login";
-import AdminProducts from "./pages/AdminProducts";
-import Capacitaciones from "./pages/Capacitaciones";
-import Certificaciones from "./pages/Certificaciones";
-import CertificationExam from "./pages/CertificationExam";
-import AdminCapacitacionesList from "./pages/AdminCapacitacionesList";
-import AdminCapacitacionEditor from "./pages/AdminCapacitacionEditor";
-import AdminCertificaciones from "./pages/AdminCertificaciones";
-import AdminKB from "./pages/AdminKB";
-import { getDefaultPathByRole, USER_ROLES } from "./utils/authRoles";
-import Chatbot from "./pages/Chatbot";
+import Navbar from "./components/layout/Navbar";
+import Footer from "./components/layout/Footer";
+import Home from "./features/public/pages/Home";
+import About from "./features/public/pages/About";
+import Products from "./features/products/pages/Products";
+import Branches from "./features/public/pages/Branches";
+import Contact from "./features/public/pages/Contact";
+import Login from "./features/auth/pages/Login";
+import AdminProducts from "./features/products/pages/AdminProducts";
+import Capacitaciones from "./features/learning/pages/Capacitaciones";
+import Certificaciones from "./features/certifications/pages/Certificaciones";
+import CertificationExam from "./features/certifications/pages/CertificationExam";
+import AdminCapacitacionesList from "./features/learning/pages/AdminCapacitacionesList";
+import AdminCapacitacionEditor from "./features/learning/pages/AdminCapacitacionEditor";
+import AdminCertificaciones from "./features/certifications/pages/AdminCertificaciones";
+import AdminKB from "./features/kb/pages/AdminKB";
+import { getDefaultPathByRole, USER_ROLES } from "./features/auth/authRoles";
+import Chatbot from "./features/chatbot/pages/Chatbot";
 
 const WHATSAPP_NUMBER = "5491162856483";
 
