@@ -20,6 +20,7 @@ function AdminKB() {
   const [filesList, setFilesList] = useState([]);
   const [isLoadingList, setIsLoadingList] = useState(false);
   const fileInputRef = useRef(null);
+  const PENDING_UPLOAD_KEY = "kb_pending_upload";
 
   // Validación de archivos
   const ALLOWED_EXTENSIONS = [".pdf", ".md", ".txt"];
@@ -67,7 +68,38 @@ function AdminKB() {
 
   useEffect(() => {
     fetchFilesList();
+
+    // Rollback: si quedó un upload huérfano de un refresh anterior, limpiarlo
+    const pending = sessionStorage.getItem(PENDING_UPLOAD_KEY);
+    if (pending) {
+      try {
+        const { archivoId, storagePath } = JSON.parse(pending);
+        console.warn("Limpiando upload huérfano:", archivoId);
+        // Eliminar storage + archivos_fuente (cascade elimina documentos_kb)
+        if (storagePath) {
+          supabase.storage.from("kb-files").remove([storagePath]);
+        }
+        supabase.from("archivos_fuente").delete().eq("id", archivoId);
+      } catch (e) {
+        console.error("Error limpiando upload huérfano:", e);
+      } finally {
+        sessionStorage.removeItem(PENDING_UPLOAD_KEY);
+      }
+    }
   }, []);
+
+  // Advertencia del navegador al intentar cerrar/refrescar durante el procesamiento
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isProcessing) {
+        e.preventDefault();
+        // Mensaje estándar del navegador (el texto custom se ignora en navegadores modernos)
+        e.returnValue = "Hay un procesamiento en curso. Si sales, se perderá el progreso.";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isProcessing]);
 
   const fetchFilesList = async () => {
     setIsLoadingList(true);
@@ -215,6 +247,9 @@ function AdminKB() {
       if (dbError) throw dbError;
       const archivoId = insertedFile.id;
 
+      // Registrar upload en curso para rollback en caso de refresh
+      sessionStorage.setItem(PENDING_UPLOAD_KEY, JSON.stringify({ archivoId, storagePath }));
+
       // 2. Levantamos el Worker para chunking + embedding en segundo plano
       setStatus("Iniciando procesamiento en segundo plano...");
       const worker = new EmbeddingWorker();
@@ -245,6 +280,8 @@ function AdminKB() {
             const { error } = await supabase.from("documentos_kb").insert(rowsWithArchivo);
             if (error) throw error;
 
+            // Upload completado exitosamente — limpiar marcador de rollback
+            sessionStorage.removeItem(PENDING_UPLOAD_KEY);
             setStatus("¡Base de conocimientos actualizada con éxito!");
             setManualText("");
             setFile(null);
