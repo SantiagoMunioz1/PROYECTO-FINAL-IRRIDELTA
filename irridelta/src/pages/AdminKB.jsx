@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "../supabaseClient";
-import { getEmbedder } from "../services/embeddingService";
+// El sufijo ?worker es magia de Vite para empaquetarlo como proceso separado
+import EmbeddingWorker from './embeddingWorker.js?worker';
 import * as pdfjsLib from "pdfjs-dist";
 import { Trash2, Download, FileText, UploadCloud, X } from "lucide-react";
 // El "?url" al final es clave para que Vite lo trate como un archivo estático
@@ -137,45 +138,12 @@ function AdminKB() {
     }
   };
 
-  // Chunking simple (1000 caracteres, 200 de overlap), respetando los espacios
-  const chunkText = (text, chunkSize = 1000, overlap = 200) => {
-    const chunks = [];
-    let i = 0;
-    while (i < text.length) {
-      let end = i + chunkSize;
-      // Intentar no cortar palabras a la mitad
-      if (end < text.length) {
-        const lastSpace = text.lastIndexOf(" ", end);
-        if (lastSpace > i + overlap) {
-          end = lastSpace;
-        }
-      }
-      chunks.push(text.slice(i, end));
-      i = end - overlap;
-    }
-    return chunks;
-  };
-
   const handleProcess = async (e) => {
     e.preventDefault();
-
-    // Validación de tipo y tamaño del archivo
-    if (file) {
-      const ext = "." + file.name.split(".").pop().toLowerCase();
-      if (!ALLOWED_EXTENSIONS.includes(ext)) {
-        alert(`Tipo de archivo no soportado. Solo se permiten: ${ALLOWED_EXTENSIONS.join(", ")}`);
-        return;
-      }
-      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-        alert(`El archivo no debe superar ${MAX_SIZE_MB}MB.`);
-        return;
-      }
-    }
-
     try {
       setIsProcessing(true);
       setProgress(0);
-      setStatus("Extrayendo texto...");
+      setStatus("Extrayendo texto del documento (puede demorar en PDFs pesados)...");
 
       let fullText = manualText.trim();
 
@@ -186,6 +154,7 @@ function AdminKB() {
 
       if (!fullText) {
         alert("Por favor, ingresa texto o sube un archivo.");
+        setIsProcessing(false);
         return;
       }
 
@@ -193,7 +162,6 @@ function AdminKB() {
       fullText = fullText.replace(/\0/g, "");
 
       setStatus("Subiendo archivo al storage...");
-      let archivoId = null;
       const fileName = file ? file.name : `Carga_Manual_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.txt`;
       const storagePath = `kb/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
 
@@ -222,56 +190,70 @@ function AdminKB() {
         .single();
 
       if (dbError) throw dbError;
-      archivoId = insertedFile.id;
+      const archivoId = insertedFile.id;
 
-      setStatus("Dividiendo el texto en fragmentos (chunks)...");
-      const chunks = chunkText(fullText);
-      const total = chunks.length;
+      // 2. Levantamos el Worker para chunking + embedding en segundo plano
+      setStatus("Iniciando procesamiento en segundo plano...");
+      const worker = new EmbeddingWorker();
+      worker.postMessage({ fullText, fileName });
 
-      setStatus("Cargando modelo de IA (gte-small)...");
-      const extractor = await getEmbedder();
+      // 3. Escuchamos las respuestas del worker
+      worker.onmessage = async (event) => {
+        const { status: workerStatus, progress: workerProgress, message, rowsToInsert } = event.data;
 
-      
-      // Array para almacenar todos los registros antes de subir
-      const rowsToInsert = [];
+        if (workerStatus === 'info') {
+          setStatus(message);
+        }
+        else if (workerStatus === 'progress') {
+          setProgress(workerProgress);
+          setStatus(message);
+        }
+        else if (workerStatus === 'done') {
+          try {
+            setStatus("Subiendo todos los fragmentos a Supabase...");
 
-      for (let i = 0; i < total; i++) {
-        setStatus(`Procesando vector ${i + 1} de ${total}...`);
-        const chunk = chunks[i];
+            // Inyectar archivo_id en cada registro (el worker no tiene acceso a Supabase)
+            const rowsWithArchivo = rowsToInsert.map((row) => ({
+              ...row,
+              archivo_id: archivoId,
+            }));
 
-        // Generar Embedding localmente
-        const output = await extractor(chunk, { pooling: "mean", normalize: true });
-        const embedding = Array.from(output.data);
+            // INSERCIÓN MASIVA (Batch Insert): Un solo viaje a la base de datos
+            const { error } = await supabase.from("documentos_kb").insert(rowsWithArchivo);
+            if (error) throw error;
 
-        // Agregamos al lote en lugar de subirlo inmediatamente
-        rowsToInsert.push({
-          archivo_id: archivoId,
-          contenido: chunk,
-          metadata: { source: fileName, chunk_index: i },
-          embedding: embedding,
-        });
+            setStatus("¡Base de conocimientos actualizada con éxito!");
+            setManualText("");
+            setFile(null);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            fetchFilesList();
+            setTimeout(() => setStatus(""), 4000);
+          } catch (insertErr) {
+            console.error(insertErr);
+            setStatus("Error: " + insertErr.message);
+          } finally {
+            worker.terminate();
+            setIsProcessing(false);
+          }
+        }
+        else if (workerStatus === 'error') {
+          console.error("Worker error:", message);
+          setStatus("Error: " + message);
+          worker.terminate();
+          setIsProcessing(false);
+        }
+      };
 
-        // Actualizamos la barra de progreso
-        setProgress(Math.round(((i + 1) / total) * 100));
-      }
+      worker.onerror = (err) => {
+        console.error("Worker crash:", err);
+        setStatus("Error crítico en el procesamiento.");
+        worker.terminate();
+        setIsProcessing(false);
+      };
 
-      setStatus("Subiendo todos los fragmentos a Supabase...");
-
-      // 2. INSERCIÓN MASIVA (Batch Insert): Un solo viaje a la base de datos
-      const { error } = await supabase.from("documentos_kb").insert(rowsToInsert);
-
-      if (error) throw error;
-
-      setStatus("¡Base de conocimientos actualizada con éxito!");
-      setManualText("");
-      setFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      fetchFilesList();
-      setTimeout(() => setStatus(""), 4000);
     } catch (err) {
       console.error(err);
       setStatus("Error: " + err.message);
-    } finally {
       setIsProcessing(false);
     }
   };
