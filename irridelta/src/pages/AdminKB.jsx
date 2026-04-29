@@ -161,9 +161,32 @@ function AdminKB() {
       // 1. SANITIZACIÓN CRÍTICA: Remover caracteres nulos que rompen PostgreSQL
       fullText = fullText.replace(/\0/g, "");
 
-      setStatus("Subiendo archivo al storage...");
+      setStatus("Verificando duplicados...");
       const fileName = file ? file.name : `Carga_Manual_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.txt`;
       const storagePath = `kb/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+
+      // Validar si ya existe un archivo con el mismo nombre
+      const { data: existente } = await supabase
+        .from("archivos_fuente")
+        .select("id, storage_path")
+        .eq("nombre", fileName)
+        .maybeSingle();
+
+      if (existente) {
+        const reemplazar = window.confirm(
+          `Ya existe un documento llamado "${fileName}".\n\n¿Deseas reemplazarlo? Se eliminarán los fragmentos anteriores y se procesará el nuevo archivo.`
+        );
+        if (!reemplazar) {
+          setStatus("");
+          setIsProcessing(false);
+          return;
+        }
+        // Eliminar el archivo anterior (storage + DB con cascade a documentos_kb)
+        if (existente.storage_path) {
+          await supabase.storage.from("kb-files").remove([existente.storage_path]);
+        }
+        await supabase.from("archivos_fuente").delete().eq("id", existente.id);
+      }
 
       if (file) {
         // Subir el archivo adjunto
