@@ -188,10 +188,12 @@ function Chatbot() {
         conversationHistory.current = conversationHistory.current.slice(-MAX_HISTORY_TURNS * 2);
       }
 
-      // Limpiar flag de streaming
+      // Limpiar flag de streaming y asegurar que no quede el placeholder
+      const finalReply = fullReply.trim() || "Lo siento, hubo un problema al generar la respuesta. Por favor intenta reformular tu consulta o contactarnos directamente.";
+
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.id === botMsgId ? { ...msg, isStreaming: false } : msg
+          msg.id === botMsgId ? { ...msg, text: finalReply, isStreaming: false } : msg
         )
       );
 

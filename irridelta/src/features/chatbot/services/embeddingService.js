@@ -6,8 +6,11 @@ import { pipeline, env } from "@xenova/transformers";
 
 // Configuramos el entorno de Transformers.js para evitar errores en Vite
 env.allowLocalModels = false;
-env.backends.onnx.wasm.wasmPaths =
-  "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
+env.backends.onnx.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
+
+// Deshabilitar multithreading arregla el error de import 'sb' (SharedArrayBuffer)
+// cuando el servidor no tiene los headers COOP/COEP configurados.
+env.backends.onnx.wasm.numThreads = 1;
 
 // Singleton para cargar el modelo de IA una sola vez en el navegador
 let instance = null;
