@@ -3,7 +3,7 @@ import { supabase } from "../supabaseClient";
 // El sufijo ?worker es magia de Vite para empaquetarlo como proceso separado
 import EmbeddingWorker from './embeddingWorker.js?worker';
 import * as pdfjsLib from "pdfjs-dist";
-import { Trash2, Download, FileText, UploadCloud, X, Eye, Layers, File, Calendar, HardDrive } from "lucide-react";
+import { Trash2, Download, FileText, UploadCloud, X, Eye, Layers, File, Calendar, HardDrive, ToggleLeft, ToggleRight } from "lucide-react";
 // El "?url" al final es clave para que Vite lo trate como un archivo estático
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'; 
 
@@ -135,6 +135,31 @@ function AdminKB() {
     } catch (err) {
       console.error("Error eliminando el archivo:", err);
       alert("Error al eliminar el archivo.");
+    }
+  };
+
+  const handleToggleActivo = async (id, currentActivo) => {
+    try {
+      const { error } = await supabase
+        .from("archivos_fuente")
+        .update({ activo: !currentActivo })
+        .eq("id", id);
+      if (error) throw error;
+      
+      // Actualizar la lista local sin recargar
+      setFilesList((prev) =>
+        prev.map((f) => (f.id === id ? { ...f, activo: !currentActivo } : f))
+      );
+      // Actualizar el modal de preview si está abierto para este archivo
+      if (preview?.file?.id === id) {
+        setPreview((prev) => ({
+          ...prev,
+          file: { ...prev.file, activo: !currentActivo },
+        }));
+      }
+    } catch (err) {
+      console.error("Error al cambiar estado del archivo:", err);
+      alert("Error al cambiar el estado del archivo.");
     }
   };
 
@@ -491,17 +516,35 @@ function AdminKB() {
                 <tr className="border-b border-gray-200 text-sm text-gray-600">
                   <th className="py-3 px-4 font-semibold">Nombre</th>
                   <th className="py-3 px-4 font-semibold">Fecha de Carga</th>
+                  <th className="py-3 px-4 font-semibold">Estado</th>
                   <th className="py-3 px-4 font-semibold text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="text-sm text-gray-700">
                 {filesList.map((f) => (
-                  <tr key={f.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <tr key={f.id} className={`border-b border-gray-100 transition-colors ${f.activo === false ? 'bg-gray-50/70 opacity-60' : 'hover:bg-gray-50'}`}>
                     <td className="py-3 px-4 max-w-[300px] truncate" title={f.nombre}>
-                      {f.nombre}
+                      <span className={f.activo === false ? 'line-through text-gray-400' : ''}>{f.nombre}</span>
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
                       {new Date(f.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4">
+                      <button
+                        onClick={() => handleToggleActivo(f.id, f.activo !== false)}
+                        className={`flex items-center gap-1.5 text-xs font-medium rounded-full px-2.5 py-1 transition-all ${
+                          f.activo !== false
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                            : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                        }`}
+                        title={f.activo !== false ? 'Activo en RAG — click para desactivar' : 'Inactivo en RAG — click para activar'}
+                      >
+                        {f.activo !== false ? (
+                          <><ToggleRight className="w-4 h-4" /> Activo</>
+                        ) : (
+                          <><ToggleLeft className="w-4 h-4" /> Inactivo</>
+                        )}
+                      </button>
                     </td>
                     <td className="py-3 px-4 flex justify-end gap-2">
                       <button
@@ -595,6 +638,35 @@ function AdminKB() {
                     <span className="text-xs text-gray-500">Fecha de carga</span>
                     <span className="text-sm font-semibold text-gray-800">{new Date(preview.file.created_at).toLocaleString()}</span>
                   </div>
+                </div>
+
+                {/* Toggle Activo/Inactivo */}
+                <div className={`flex items-center justify-between rounded-xl border p-4 transition-colors ${
+                  preview.file.activo !== false
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-gray-100 border-gray-200'
+                }`}>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {preview.file.activo !== false ? 'Activo en el RAG' : 'Desactivado del RAG'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {preview.file.activo !== false
+                        ? 'Los chunks de este archivo son consultados por el chatbot.'
+                        : 'Este archivo está excluido de las búsquedas del chatbot.'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleToggleActivo(preview.file.id, preview.file.activo !== false)}
+                    className="flex-shrink-0 transition-transform hover:scale-110"
+                    title={preview.file.activo !== false ? 'Desactivar' : 'Activar'}
+                  >
+                    {preview.file.activo !== false ? (
+                      <ToggleRight className="w-8 h-8 text-green-600" />
+                    ) : (
+                      <ToggleLeft className="w-8 h-8 text-gray-400" />
+                    )}
+                  </button>
                 </div>
 
                 {/* Preview */}
