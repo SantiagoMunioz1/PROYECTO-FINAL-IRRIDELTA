@@ -5,6 +5,7 @@ import { useAuth } from "../../features/auth/services/useAuth";
 import { useSessionStore } from "../../store/sessionStore";
 import { USER_ROLES } from "../../features/auth/authRoles";
 import { getNavItems } from "../../utils/navigationConfig";
+import styles from "./Navbar.module.css";
 
 function Navbar() {
   const { logOut } = useAuth();
@@ -19,10 +20,9 @@ function Navbar() {
   const isLoading = useSessionStore((state) => state.isLoading);
 
   const navBg = "bg-gray-800";
-  const baseLinkClasses =
-    "rounded-md px-3 py-2 text-sm font-medium transition duration-150 ease-in-out";
-  const defaultLinkClasses = "text-gray-300 hover:bg-gray-700 hover:text-green-400";
-  const activeLinkClasses = "bg-gray-900 text-green-400";
+  const baseLinkClasses = styles.navLinkBase;
+  const defaultLinkClasses = styles.navLinkIdle;
+  const activeLinkClasses = styles.navLinkActive;
   const ctaPath = "/login";
   const ctaLabel = "Iniciar Sesion";
   const isCtaActive = location.pathname === ctaPath;
@@ -116,10 +116,10 @@ function Navbar() {
                       <button
                         type="button"
                         onClick={() => setIsAdminMenuOpen((prev) => !prev)}
-                        className={`${baseLinkClasses} inline-flex items-center gap-2 ${
+                        className={`${styles.navLinkBase} inline-flex items-center gap-2 ${
                           isAdminSectionActive || isAdminMenuOpen
-                            ? activeLinkClasses
-                            : defaultLinkClasses
+                            ? styles.navLinkActive
+                            : styles.navLinkIdle
                         }`}
                         aria-expanded={isAdminMenuOpen}
                         aria-haspopup="menu"
@@ -141,10 +141,10 @@ function Navbar() {
                               <Link
                                 key={child.name}
                                 to={child.path}
-                                className={`block px-4 py-3 text-sm transition ${
+                                className={`${styles.desktopSubmenuLink} ${
                                   isActive
-                                    ? "border-l-2 border-green-500 bg-green-50 font-semibold text-green-700"
-                                    : "text-gray-700 hover:bg-gray-50 hover:text-green-600"
+                                    ? styles.desktopSubmenuLinkActive
+                                    : styles.desktopSubmenuLinkIdle
                                 }`}
                               >
                                 {child.name}
@@ -204,15 +204,15 @@ function Navbar() {
                 return (
                   <div
                     key={item.name}
-                    className="overflow-hidden rounded-xl border border-gray-700 bg-gray-900/50"
+                    className={styles.mobileMenuWrapper}
                   >
                     <button
                       type="button"
                       onClick={() => setIsMobileAdminMenuOpen((prev) => !prev)}
-                      className={`flex w-full items-center justify-between px-4 py-3 text-left text-base font-medium transition ${
+                      className={`${styles.mobileAdminButton} ${
                         isAdminSectionActive
-                          ? "bg-gray-900 text-green-400"
-                          : "text-gray-300 hover:bg-gray-700 hover:text-green-400"
+                          ? styles.mobileAdminButtonActive
+                          : styles.mobileAdminButtonIdle
                       }`}
                       aria-expanded={isMobileAdminMenuOpen}
                     >
@@ -233,10 +233,10 @@ function Navbar() {
                             <Link
                               key={child.name}
                               to={child.path}
-                              className={`block px-4 py-3 text-sm transition ${
+                              className={`${styles.mobileSubmenuLink} ${
                                 isActive
-                                  ? "border-l-2 border-green-500 bg-green-50 font-semibold text-green-700"
-                                  : "text-gray-700 hover:bg-gray-50 hover:text-green-600"
+                                  ? styles.mobileSubmenuLinkActive
+                                  : styles.mobileSubmenuLinkIdle
                               }`}
                               onClick={() => setIsOpen(false)}
                             >
@@ -254,7 +254,7 @@ function Navbar() {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`block text-base ${getLinkClasses(item.path)}`}
+                  className={`${styles.navLinkMobile} ${getLinkClasses(item.path)}`}
                   onClick={() => setIsOpen(false)}
                 >
                   {item.name}

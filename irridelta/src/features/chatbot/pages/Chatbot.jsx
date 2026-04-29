@@ -16,6 +16,7 @@ import {
   OFF_TOPIC_RESPONSE,
   buildSystemPrompt,
 } from "../services/chatbotConfig";
+import styles from "./Chatbot.module.css";
 
 function Chatbot() {
   const user = useSessionStore((state) => state.user);
@@ -239,7 +240,7 @@ function Chatbot() {
       {/* Botón Flotante (FAB) */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white shadow-2xl transition-transform hover:scale-105 hover:bg-green-700"
+        className={styles.fabButton}
         aria-label="Abrir asistente"
       >
         {isOpen ? <X size={28} /> : <MessageCircle size={28} />}
@@ -248,10 +249,8 @@ function Chatbot() {
       {/* Ventana de Chat Flotante */}
       {isOpen && (
         <div 
-          className={`fixed bottom-24 right-6 z-50 flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 transition-all duration-300 ease-in-out ${
-            isExpanded 
-              ? "w-[90vw] md:w-[800px] lg:w-[1000px] h-[85vh] max-h-[900px]" 
-              : "w-[350px] sm:w-[400px] h-[600px] max-h-[80vh]"
+          className={`${styles.chatWindow} ${
+            isExpanded ? styles.chatWindowExpanded : styles.chatWindowCollapsed
           }`}
         >
           {/* Header */}

@@ -1,0 +1,77 @@
+.timerBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  border-width: 1px;
+}
+
+.timerBadgeNormal {
+  border-color: var(--color-blue-200, #bfdbfe);
+  background-color: var(--color-blue-50, #eff6ff);
+  color: var(--color-blue-700, #1d4ed8);
+}
+
+.timerBadgeWarning {
+  border-color: var(--color-red-200, #fecaca);
+  background-color: var(--color-red-50, #fef2f2);
+  color: var(--color-red-700, #b91c1c);
+}
+
+.questionBadge {
+  display: inline-flex;
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+}
+
+.questionBadgePending {
+  background-color: var(--color-amber-100, #fef3c7);
+  color: var(--color-amber-700, #b45309);
+}
+
+.questionBadgeAnswered {
+  background-color: var(--color-green-100, #dcfce3);
+  color: var(--color-green-700, #15803d);
+}
+
+.questionOption {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.5rem;
+  border-width: 1px;
+  padding: 0.75rem 1rem;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+.questionOption:hover {
+  background-color: var(--color-gray-50, #f9fafb);
+}
+
+.resultContainer {
+  margin-top: 2rem;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  border-width: 1px;
+}
+
+.resultContainerPassed {
+  border-color: var(--color-green-400, #4ade80);
+  background-color: var(--color-green-100, #dcfce3);
+  color: var(--color-green-700, #15803d);
+}
+
+.resultContainerFailed {
+  border-color: var(--color-red-400, #f87171);
+  background-color: var(--color-red-100, #fee2e2);
+  color: var(--color-red-700, #b91c1c);
+}

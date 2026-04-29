@@ -20,6 +20,7 @@ import {
   getCertificationPassingScore,
   getMinimumCorrectAnswers,
 } from "../utils/certifications";
+import styles from "./CertificationExam.module.css";
 
 function shuffleQuestions(items) {
   const shuffledItems = [...items];
@@ -332,8 +333,8 @@ function CertificationExam() {
 
   const timerBadgeClass =
     secondsRemaining !== null && secondsRemaining <= 60
-      ? "border border-red-200 bg-red-50 text-red-700"
-      : "border border-blue-200 bg-blue-50 text-blue-700";
+      ? styles.timerBadgeWarning
+      : styles.timerBadgeNormal;
 
   return (
     <>
@@ -380,7 +381,7 @@ function CertificationExam() {
                   </div>
 
                   <div
-                    className={`inline-flex rounded-full px-4 py-2 text-sm font-semibold ${timerBadgeClass}`}
+                    className={`${styles.timerBadge} ${timerBadgeClass}`}
                   >
                     {secondsRemaining === null
                       ? "Tiempo restante: Sin limite"
@@ -419,10 +420,10 @@ function CertificationExam() {
                         </h2>
 
                         <span
-                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                          className={`${styles.questionBadge} ${
                             answers[question.id] === undefined
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-green-100 text-green-700"
+                              ? styles.questionBadgePending
+                              : styles.questionBadgeAnswered
                           }`}
                         >
                           {answers[question.id] === undefined
@@ -435,7 +436,7 @@ function CertificationExam() {
                         {question.opciones.map((option, optionIndex) => (
                           <label
                             key={`${question.id}-${optionIndex}`}
-                            className="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition duration-200 hover:bg-gray-50"
+                            className={styles.questionOption}
                           >
                             <input
                               type="radio"
@@ -546,10 +547,10 @@ function CertificationExam() {
 
               {result && (
                 <div
-                  className={`mt-8 rounded-lg px-5 py-4 ${
+                  className={`${styles.resultContainer} ${
                     result.passed
-                      ? "border border-green-400 bg-green-100 text-green-700"
-                      : "border border-red-400 bg-red-100 text-red-700"
+                      ? styles.resultContainerPassed
+                      : styles.resultContainerFailed
                   }`}
                 >
                   <p className="text-lg font-semibold">
