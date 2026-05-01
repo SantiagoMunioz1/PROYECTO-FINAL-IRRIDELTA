@@ -176,6 +176,31 @@ export async function fetchLearningItems(type, options = {}) {
   throw new Error("Tipo de contenido no soportado");
 }
 
+export async function fetchLearningItemById(id, options = {}) {
+  let query = supabase
+    .from(CAPACITACIONES_TABLE)
+    .select("*")
+    .eq("id", id);
+
+  if (options.onlyPublished) {
+    query = query.eq("publicada", true);
+  }
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const hydratedItems = await hydrateCapacitaciones([data]);
+
+  return hydratedItems[0] ?? null;
+}
+
 async function hydrateCapacitaciones(capacitaciones) {
   const capacitacionIds = capacitaciones.map((item) => item.id);
 

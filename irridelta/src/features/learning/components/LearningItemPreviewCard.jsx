@@ -1,85 +1,60 @@
 import React from "react";
-import { RESOURCE_TYPES } from "../services/learningContentService";
+import { Award, BookOpen, CalendarDays, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import styles from "./LearningItemPreviewCard.module.css";
+
+function getShortDescription(description) {
+  if (!description) {
+    return "Capacitacion disponible para clientes de IRRIDELTA.";
+  }
+
+  const normalizedDescription = description.trim();
+
+  if (normalizedDescription.length <= 180) {
+    return normalizedDescription;
+  }
+
+  return `${normalizedDescription.slice(0, 177).trim()}...`;
+}
 
 function LearningItemPreviewCard({ item, showPublishedDate = true }) {
   if (!item) {
     return null;
   }
 
+  const moduleCount = item.modulos?.length ?? 0;
+  const hasCertification = Boolean(item.certificacion);
+
   return (
-    <article className="rounded-2xl bg-white p-6 shadow-md">
-      <div className="mb-3">
-        <h2 className="text-2xl font-bold text-gray-900">{item.titulo}</h2>
+    <article className={styles.card}>
+      <div className={styles.content}>
+        <h2 className={styles.title}>{item.titulo}</h2>
+        <p className={styles.description}>{getShortDescription(item.descripcion)}</p>
       </div>
 
-      {item.descripcion && (
-        <p className="mb-5 text-sm leading-6 text-gray-600">{item.descripcion}</p>
-      )}
+      <div className={styles.metaList}>
+        <span className={styles.metaItem}>
+          <BookOpen className={styles.metaIcon} aria-hidden="true" />
+          {moduleCount === 1 ? "1 modulo" : `${moduleCount} modulos`}
+        </span>
+        <span className={styles.metaItem}>
+          <Award className={styles.metaIcon} aria-hidden="true" />
+          {hasCertification ? "Con certificacion" : "Sin certificacion"}
+        </span>
+        {showPublishedDate && item.created_at && (
+          <span className={styles.metaItem}>
+            <CalendarDays className={styles.metaIcon} aria-hidden="true" />
+            {new Date(item.created_at).toLocaleDateString("es-AR")}
+          </span>
+        )}
+      </div>
 
-      {item.modulos?.length > 0 && (
-        <div className="space-y-4">
-          {item.modulos.map((module, moduleIndex) => (
-            <section
-              key={module.id ?? `${item.id}-module-${moduleIndex}`}
-              className="rounded-xl border border-gray-100 bg-gray-50 p-4"
-            >
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-                  Modulo {moduleIndex + 1}
-                </p>
-                <h3 className="mt-1 text-lg font-bold text-gray-900">
-                  {module.titulo}
-                </h3>
-                {module.descripcion && (
-                  <p className="mt-2 text-sm leading-6 text-gray-600">
-                    {module.descripcion}
-                  </p>
-                )}
-              </div>
-
-              {module.recursos?.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {module.recursos.map((resource, resourceIndex) => {
-                    const isFile = resource.tipo === RESOURCE_TYPES.ARCHIVO;
-                    const href = isFile
-                      ? resource.archivo_url
-                      : resource.youtube_url;
-                    const label = isFile
-                      ? resource.archivo_nombre ?? "Abrir archivo"
-                      : "Ver YouTube";
-
-                    if (!href) {
-                      return null;
-                    }
-
-                    return (
-                      <a
-                        key={resource.id ?? `${module.id ?? moduleIndex}-${resourceIndex}`}
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={
-                          isFile
-                            ? "rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition duration-200 hover:bg-blue-600"
-                            : "rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition duration-200 hover:bg-red-600"
-                        }
-                      >
-                        {label}
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          ))}
-        </div>
-      )}
-
-      {showPublishedDate && item.created_at && (
-        <p className="mt-5 text-xs text-gray-400">
-          {`Publicado el ${new Date(item.created_at).toLocaleDateString("es-AR")}`}
-        </p>
-      )}
+      <footer className={styles.footer}>
+        <Link to={`/capacitaciones/${item.id}`} className={styles.detailLink}>
+          Ver capacitacion
+          <ChevronRight size={18} aria-hidden="true" />
+        </Link>
+      </footer>
     </article>
   );
 }

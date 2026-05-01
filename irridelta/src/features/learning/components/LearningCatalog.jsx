@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchLearningItems } from "../services/learningContentService";
 import LearningItemPreviewCard from "./LearningItemPreviewCard";
+import styles from "./LearningCatalog.module.css";
 
 function LearningCatalog({ type, title, emptyMessage, onlyPublished = false }) {
   const [items, setItems] = useState([]);
@@ -42,16 +43,14 @@ function LearningCatalog({ type, title, emptyMessage, onlyPublished = false }) {
   }, [onlyPublished, type]);
 
   return (
-    <section className="min-h-[70vh] bg-gray-50 px-4 py-16">
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-10 text-center">
-          <h1 className="text-4xl font-extrabold tracking-wide text-gray-900 md:text-6xl">
-            {title}
-          </h1>
+    <section className={styles.catalog}>
+      <div className={styles.inner}>
+        <header className={styles.header}>
+          <h1 className={styles.title}>{title}</h1>
         </header>
 
         {loading && (
-          <div className="rounded-xl bg-white p-8 text-center text-gray-600 shadow">
+          <div className={styles.feedbackCard}>
             Cargando contenido...
           </div>
         )}
@@ -63,17 +62,13 @@ function LearningCatalog({ type, title, emptyMessage, onlyPublished = false }) {
         )}
 
         {!loading && !error && items.length === 0 && (
-          <div className="rounded-xl bg-white p-8 text-center text-gray-600 shadow">
-            {emptyMessage}
-          </div>
+          <div className={styles.feedbackCard}>{emptyMessage}</div>
         )}
 
         {!loading && !error && items.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className={styles.grid}>
             {items.map((item) => (
-              <div key={item.id} className="transition duration-200 hover:shadow-lg">
-                <LearningItemPreviewCard item={item} />
-              </div>
+              <LearningItemPreviewCard key={item.id} item={item} />
             ))}
           </div>
         )}
