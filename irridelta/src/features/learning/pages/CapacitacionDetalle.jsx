@@ -45,6 +45,15 @@ function getResourceLabel(resource) {
   return resource.titulo || "Ver YouTube";
 }
 
+function isModuleCompleted(module, completedResourceIds) {
+  const resources = module?.recursos ?? [];
+
+  return (
+    resources.length > 0 &&
+    resources.every((resource) => completedResourceIds.has(resource.id))
+  );
+}
+
 function CapacitacionDetalle() {
   const { capacitacionId } = useParams();
   const [capacitacion, setCapacitacion] = useState(null);
@@ -266,13 +275,19 @@ function CapacitacionDetalle() {
                         modules,
                         completedResourceIds
                       );
+                      const moduleCompleted = isModuleCompleted(
+                        module,
+                        completedResourceIds
+                      );
 
                       return (
                         <article
                           key={
                             module.id ?? `${capacitacion.id}-module-${moduleIndex}`
                           }
-                          className={styles.moduleCard}
+                          className={`${styles.moduleCard} ${
+                            moduleCompleted ? styles.moduleCardCompleted : ""
+                          }`}
                           style={moduleUnlocked ? undefined : { opacity: 0.65 }}
                         >
                           <p className={styles.moduleEyebrow}>
@@ -336,8 +351,7 @@ function CapacitacionDetalle() {
                                           }
                                         />
                                         <p className="mt-2 text-sm font-semibold text-gray-700">
-                                          {getResourceLabel(resource)}{" "}
-                                          {resourceCompleted && "(completado)"}
+                                          {getResourceLabel(resource)}
                                         </p>
                                       </div>
                                     ) : resourceUnlocked ? (
@@ -363,7 +377,6 @@ function CapacitacionDetalle() {
                                           />
                                         )}
                                         {getResourceLabel(resource)}
-                                        {resourceCompleted && "(completado)"}
                                         <ExternalLink
                                           size={15}
                                           aria-hidden="true"
@@ -394,7 +407,7 @@ function CapacitacionDetalle() {
                                             aria-hidden="true"
                                           />
                                         )}
-                                        {getResourceLabel(resource)} (bloqueado)
+                                        {getResourceLabel(resource)}
                                       </button>
                                     )}
 
@@ -424,6 +437,12 @@ function CapacitacionDetalle() {
                                     {resourceCompleted && (
                                       <span className={styles.badge}>
                                         Completado
+                                      </span>
+                                    )}
+
+                                    {!resourceUnlocked && (
+                                      <span className={styles.badge}>
+                                        Bloqueado
                                       </span>
                                     )}
                                   </div>

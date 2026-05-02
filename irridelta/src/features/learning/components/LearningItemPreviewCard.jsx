@@ -17,16 +17,37 @@ function getShortDescription(description) {
   return `${normalizedDescription.slice(0, 177).trim()}...`;
 }
 
-function LearningItemPreviewCard({ item, showPublishedDate = true }) {
+const STATUS_LABELS = {
+  pendiente: "Pendiente",
+  "en-progreso": "En progreso",
+  completado: "Completado",
+};
+
+function LearningItemPreviewCard({ item, progress, showPublishedDate = true }) {
   if (!item) {
     return null;
   }
 
   const moduleCount = item.modulos?.length ?? 0;
   const hasCertification = Boolean(item.certificacion);
+  const progressData = progress ?? {
+    completedModules: 0,
+    totalModules: moduleCount,
+    progressPercentage: 0,
+    status: "pendiente",
+  };
+  const isCompleted = progressData.status === "completado";
+  const detailLabel =
+    progressData.status === "completado"
+      ? "Revisar capacitacion"
+      : progressData.status === "en-progreso"
+        ? "Continuar"
+        : "Comenzar";
 
   return (
-    <article className={styles.card}>
+    <article
+      className={`${styles.card} ${isCompleted ? styles.cardCompleted : ""}`}
+    >
       <div className={styles.content}>
         <h2 className={styles.title}>{item.titulo}</h2>
         <p className={styles.description}>{getShortDescription(item.descripcion)}</p>
@@ -49,9 +70,30 @@ function LearningItemPreviewCard({ item, showPublishedDate = true }) {
         )}
       </div>
 
+      <div className={styles.progressBlock}>
+        <div className={styles.progressHeader}>
+          <span>
+            {progressData.completedModules}/{progressData.totalModules} modulos
+            completados
+          </span>
+          <span className={`${styles.statusBadge} ${styles[progressData.status]}`}>
+            {STATUS_LABELS[progressData.status]}
+          </span>
+        </div>
+        <div
+          className={styles.progressTrack}
+          aria-label={`Progreso ${progressData.progressPercentage}%`}
+        >
+          <span
+            className={styles.progressBar}
+            style={{ width: `${progressData.progressPercentage}%` }}
+          />
+        </div>
+      </div>
+
       <footer className={styles.footer}>
         <Link to={`/capacitaciones/${item.id}`} className={styles.detailLink}>
-          Ver capacitacion
+          {detailLabel}
           <ChevronRight size={18} aria-hidden="true" />
         </Link>
       </footer>

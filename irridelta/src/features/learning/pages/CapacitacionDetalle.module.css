@@ -88,6 +88,17 @@
   padding: 1.25rem;
 }
 
+.moduleCardCompleted {
+  border-color: #d1d5db;
+  background: #f3f4f6;
+}
+
+.moduleCardCompleted .moduleEyebrow,
+.moduleCardCompleted .moduleTitle,
+.moduleCardCompleted .moduleDescription {
+  color: #6b7280;
+}
+
 .moduleEyebrow {
   color: var(--color-info);
   font-size: 0.75rem;

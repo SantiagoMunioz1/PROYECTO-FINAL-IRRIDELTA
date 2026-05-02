@@ -18,6 +18,21 @@
   transform: translateY(-2px);
 }
 
+.cardCompleted {
+  border-color: #d1d5db;
+  background: #f9fafb;
+  box-shadow: var(--shadow-sm);
+}
+
+.cardCompleted .title,
+.cardCompleted .description {
+  color: #6b7280;
+}
+
+.cardCompleted:hover {
+  border-color: #cbd5e1;
+}
+
 .content {
   flex: 1;
 }
@@ -57,6 +72,57 @@
 .metaIcon {
   width: 1rem;
   height: 1rem;
+}
+
+.progressBlock {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.progressHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.statusBadge {
+  border-radius: 999px;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  white-space: nowrap;
+}
+
+.pendiente {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.en-progreso {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.completado {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.progressTrack {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5e7eb;
+}
+
+.progressBar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary);
 }
 
 .footer {

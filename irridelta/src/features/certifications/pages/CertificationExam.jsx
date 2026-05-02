@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   CERTIFICATION_REQUEST_STATUS,
   createCertificationRequest,
@@ -55,6 +55,7 @@ function countAnsweredQuestions(examQuestions, answers) {
 
 function CertificationExam() {
   const { certificationId } = useParams();
+  const navigate = useNavigate();
   const user = useSessionStore((state) => state.user);
   const [certification, setCertification] = useState(null);
   const [examQuestions, setExamQuestions] = useState([]);
@@ -69,6 +70,7 @@ function CertificationExam() {
   const [loadError, setLoadError] = useState("");
   const [uiError, setUiError] = useState("");
   const [stage, setStage] = useState("exam");
+  const [examStarted, setExamStarted] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(null);
 
   const examQuestionCount = examQuestions.length;
@@ -91,6 +93,7 @@ function CertificationExam() {
       setRequestMessage("");
       setRequestError("");
       setStage("exam");
+      setExamStarted(false);
       setSecondsRemaining(null);
       return;
     }
@@ -103,11 +106,8 @@ function CertificationExam() {
     setRequestError("");
     setUiError("");
     setStage("exam");
-
-    const nextDurationMinutes = getCertificationDurationMinutes(nextCertification);
-    setSecondsRemaining(
-      nextDurationMinutes > 0 ? nextDurationMinutes * 60 : null
-    );
+    setExamStarted(false);
+    setSecondsRemaining(null);
   }
 
   function finishExam({ isTimeExpired = false } = {}) {
@@ -208,6 +208,7 @@ function CertificationExam() {
   useEffect(() => {
     if (
       loading ||
+      !examStarted ||
       !certification ||
       examQuestions.length === 0 ||
       stage === "result" ||
@@ -227,11 +228,20 @@ function CertificationExam() {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [certification, examQuestions.length, loading, result, secondsRemaining, stage]);
+  }, [
+    certification,
+    examQuestions.length,
+    examStarted,
+    loading,
+    result,
+    secondsRemaining,
+    stage,
+  ]);
 
   useEffect(() => {
     if (
       loading ||
+      !examStarted ||
       !certification ||
       examQuestions.length === 0 ||
       stage === "result" ||
@@ -246,6 +256,7 @@ function CertificationExam() {
     answers,
     certification,
     examQuestions,
+    examStarted,
     loading,
     result,
     secondsRemaining,
@@ -253,7 +264,7 @@ function CertificationExam() {
   ]);
 
   const handleAnswerChange = (questionId, answerIndex) => {
-    if (stage === "result") {
+    if (!examStarted || stage === "result") {
       return;
     }
 
@@ -287,6 +298,18 @@ function CertificationExam() {
     }
 
     resetExamState(certification);
+  };
+
+  const handleStartExam = () => {
+    const nextDurationMinutes = getCertificationDurationMinutes(certification);
+
+    setStage("exam");
+    setUiError("");
+    setResult(null);
+    setSecondsRemaining(
+      nextDurationMinutes > 0 ? nextDurationMinutes * 60 : null
+    );
+    setExamStarted(true);
   };
 
   const handleSubmitCertificateRequest = async (event) => {
@@ -366,6 +389,70 @@ function CertificationExam() {
           )}
 
           {!loading && !loadError && certification && examQuestions.length > 0 && (
+            !examStarted && !result ? (
+              <div className={styles.disclaimerOverlay}>
+                <section className={styles.disclaimerModal}>
+                  <p className={styles.disclaimerEyebrow}>
+                    Condiciones del examen
+                  </p>
+                  <h1 className={styles.disclaimerTitle}>
+                    {certification.titulo}
+                  </h1>
+                  {certification.descripcion && (
+                    <p className={styles.disclaimerText}>
+                      {certification.descripcion}
+                    </p>
+                  )}
+
+                  <div className={styles.disclaimerGrid}>
+                    <div className={styles.disclaimerItem}>
+                      <span>Cantidad de preguntas</span>
+                      <strong>{examQuestionCount}</strong>
+                    </div>
+                    <div className={styles.disclaimerItem}>
+                      <span>Minimo correcto</span>
+                      <strong>{minimumCorrectAnswers} respuestas</strong>
+                    </div>
+                    <div className={styles.disclaimerItem}>
+                      <span>Porcentaje para aprobar</span>
+                      <strong>{passingScore}%</strong>
+                    </div>
+                    <div className={styles.disclaimerItem}>
+                      <span>Tiempo maximo</span>
+                      <strong>{formatDurationLabel(durationMinutes)}</strong>
+                    </div>
+                  </div>
+
+                  <div className={styles.disclaimerNotice}>
+                    <p>
+                      El tiempo comienza cuando presiones Aceptar y comenzar.
+                    </p>
+                    <p>
+                      No se puede abandonar y retomar luego. Si el tiempo se
+                      agota, el sistema enviara automaticamente lo que tengas
+                      contestado hasta ese momento.
+                    </p>
+                  </div>
+
+                  <div className={styles.disclaimerActions}>
+                    <button
+                      type="button"
+                      className={styles.disclaimerPrimary}
+                      onClick={handleStartExam}
+                    >
+                      Aceptar y comenzar
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.disclaimerSecondary}
+                      onClick={() => navigate(-1)}
+                    >
+                      Volver
+                    </button>
+                  </div>
+                </section>
+              </div>
+            ) : (
             <div className="rounded-2xl bg-white p-6 shadow-md">
               <header className="border-b pb-4">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -721,6 +808,7 @@ function CertificationExam() {
                 </div>
               )}
             </div>
+            )
           )}
         </div>
       </section>
