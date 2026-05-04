@@ -47,7 +47,7 @@ function LearningItemPreviewCard({ item, progress, showPublishedDate = true }) {
   const isCompleted = progressData.status === "completado";
   const detailLabel =
     progressData.status === "completado"
-      ? "Revisar"
+      ? "Revisar capacitacion"
       : progressData.status === "en-progreso"
       ? "Continuar"
       : "Comenzar";
